@@ -1,0 +1,2 @@
+# schachhaus-participants
+Teilnehmerliste
