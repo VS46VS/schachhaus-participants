@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schachhaus-Cup - Anmeldung</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="title-line">Anmeldung</div>
+            <h1>Schachhaus-Cup</h1>
+        </header>
+
+        <main>
+            <form id="registrationForm" class="registration-form">
+                <div class="form-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="club">Verein *</label>
+                    <input type="text" id="club" name="club" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="birthYear">Geburtsjahr *</label>
+                    <input type="number" id="birthYear" name="birthYear" min="1920" max="2024" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eloDwz">ELO (optional)</label>
+                    <input type="number" id="eloDwz" name="eloDwz" min="0" max="3000">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">E-Mail *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="privacy" name="privacy" required>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">
+                            Ich stimme der <a href="#" target="_blank">Datenschutzerklärung</a> 
+                            und den <a href="#" target="_blank">Allgemeinen Geschäftsbedingungen</a> zu. *
+                        </span>
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-btn">Anmeldung senden</button>
+            </form>
+
+            <div id="statusMessage" class="status-message hidden"></div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Schachhaus-Cup</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

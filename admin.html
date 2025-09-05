@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Schachhaus-Cup</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .approve-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .reject-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .status-pending {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .status-approved {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-rejected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .admin-tabs {
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .tab-btn.active {
+            background: rgb(94, 41, 37);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1200px;">
+        <header>
+            <div class="title-line">Admin Dashboard</div>
+            <h1>Schachhaus-Cup</h1>
+        </header>
+
+        <main>
+            <div class="admin-tabs">
+                <button class="tab-btn active" onclick="showTab('pending')">Wartende Anmeldungen</button>
+                <button class="tab-btn" onclick="showTab('all')">Alle Anmeldungen</button>
+            </div>
+
+            <div id="pending-tab" class="tab-content active">
+                <h2>Wartende Anmeldungen</h2>
+                <div id="pendingList"></div>
+            </div>
+
+            <div id="all-tab" class="tab-content">
+                <h2>Alle Anmeldungen</h2>
+                <div id="allList"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let pendingParticipants = [];
+        let allParticipants = [];
+
+        async function loadPendingParticipants() {
+            try {
+                const response = await fetch('http://128.140.110.152/api/admin/pending');
+                pendingParticipants = await response.json();
+                renderPendingList();
+            } catch (error) {
+                console.error('Error loading pending participants:', error);
+            }
+        }
+
+        async function loadAllParticipants() {
+            try {
+                const response = await fetch('http://128.140.110.152/api/admin/participants');
+                allParticipants = await response.json();
+                renderAllList();
+            } catch (error) {
+                console.error('Error loading all participants:', error);
+            }
+        }
+
+        function renderPendingList() {
+            const container = document.getElementById('pendingList');
+            
+            if (pendingParticipants.length === 0) {
+                container.innerHTML = '<p>Keine wartenden Anmeldungen.</p>';
+                return;
+            }
+
+            const html = `
+                <div class="participants-table-container">
+                    <table class="participants-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Verein</th>
+                                <th>Jahrgang</th>
+                                <th>ELO</th>
+                                <th>E-Mail</th>
+                                <th>Anmeldung</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingParticipants.map(participant => `
+                                <tr>
+                                    <td>${participant.id}</td>
+                                    <td>${participant.name}</td>
+                                    <td>${participant.club}</td>
+                                    <td>${participant.birthYear}</td>
+                                    <td>${participant.eloDwz || '-'}</td>
+                                    <td>${participant.email || '-'}</td>
+                                    <td>${new Date(participant.registrationDate).toLocaleDateString('de-DE')}</td>
+                                    <td>
+                                        <div class="admin-actions">
+                                            <button class="approve-btn" onclick="approveParticipant(${participant.id})">Genehmigen</button>
+                                            <button class="reject-btn" onclick="rejectParticipant(${participant.id})">Ablehnen</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function renderAllList() {
+            const container = document.getElementById('allList');
+            
+            if (allParticipants.length === 0) {
+                container.innerHTML = '<p>Keine Anmeldungen vorhanden.</p>';
+                return;
+            }
+
+            const html = `
+                <div class="participants-table-container">
+                    <table class="participants-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Verein</th>
+                                <th>Jahrgang</th>
+                                <th>ELO</th>
+                                <th>E-Mail</th>
+                                <th>Status</th>
+                                <th>Anmeldung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${allParticipants.map(participant => `
+                                <tr>
+                                    <td>${participant.id}</td>
+                                    <td>${participant.name}</td>
+                                    <td>${participant.club}</td>
+                                    <td>${participant.birthYear}</td>
+                                    <td>${participant.eloDwz || '-'}</td>
+                                    <td>${participant.email || '-'}</td>
+                                    <td><span class="status-${participant.status || 'pending'}">${getStatusText(participant.status, participant.approved)}</span></td>
+                                    <td>${new Date(participant.registrationDate).toLocaleDateString('de-DE')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function getStatusText(status, approved) {
+            if (approved) return 'Genehmigt';
+            if (status === 'rejected') return 'Abgelehnt';
+            return 'Wartend';
+        }
+
+        async function approveParticipant(id) {
+            try {
+                const response = await fetch(`http://128.140.110.152/api/admin/approve/${id}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('Teilnehmer genehmigt!');
+                    loadPendingParticipants();
+                    loadAllParticipants();
+                } else {
+                    alert('Fehler beim Genehmigen');
+                }
+            } catch (error) {
+                console.error('Error approving participant:', error);
+                alert('Fehler beim Genehmigen');
+            }
+        }
+
+        async function rejectParticipant(id) {
+            if (!confirm('Teilnehmer wirklich ablehnen?')) return;
+            
+            try {
+                const response = await fetch(`http://128.140.110.152/api/admin/reject/${id}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('Teilnehmer abgelehnt!');
+                    loadPendingParticipants();
+                    loadAllParticipants();
+                } else {
+                    alert('Fehler beim Ablehnen');
+                }
+            } catch (error) {
+                console.error('Error rejecting participant:', error);
+                alert('Fehler beim Ablehnen');
+            }
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load data for selected tab
+            if (tabName === 'pending') {
+                loadPendingParticipants();
+            } else if (tabName === 'all') {
+                loadAllParticipants();
+            }
+        }
+
+        // Load initial data
+        loadPendingParticipants();
+    </script>
+</body>
+</html>
